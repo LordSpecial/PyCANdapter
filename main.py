@@ -1,19 +1,22 @@
-from CANdapter import CANDapter, CANFrame
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtWidgets import QApplication
+from PySide6.QtUiTools import QUiLoader
+
+import sys
+
+from MainWindow import MainWindow
 
 
 def main():
-    can_dapter = CANDapter(port="COM3")
 
-    can_dapter.close_channel()
-    can_dapter.set_bitrate(500)
-    can_dapter.open_channel()
+    # sys.argv += ['--style', 'Fusion']
 
-    msg = CANFrame(100, 4, [10, 10, 10, 10])
-    can_dapter.send_can_message(msg)
+    app = QApplication()  # (sys.argv)
 
-    while True:
-        print(can_dapter.read_can_message())
-
+    window = MainWindow()
+    window.show()
+    app.exec()
+    window.init_candaptor
 
 if __name__ == '__main__':
     main()
