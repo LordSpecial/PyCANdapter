@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>../../../Users/GGPC/Downloads/kiwi_logo.png</normaloff>../../../Users/GGPC/Downloads/kiwi_logo.png</iconset>
+    <normaloff>kiwi_logo.png</normaloff>kiwi_logo.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QTabWidget" name="tabWidget">

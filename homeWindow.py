@@ -25,7 +25,7 @@ class Ui_MainWindow(object):
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.resize(1280, 720)
         icon = QIcon()
-        icon.addFile(u"../../../Users/GGPC/Downloads/kiwi_logo.png", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u"kiwi_logo.png", QSize(), QIcon.Normal, QIcon.Off)
         MainWindow.setWindowIcon(icon)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
