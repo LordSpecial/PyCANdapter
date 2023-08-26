@@ -1,6 +1,6 @@
 import sys
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from PySide6.QtWidgets import QMainWindow, QHeaderView
 from homeWindow import Ui_MainWindow  
@@ -24,9 +24,11 @@ class MainWindow(QMainWindow):
         # self.rowDataAvailable.connect(self.add_row)
 
         self.ui.sendCANFrame.clicked.connect(lambda: self.canManager.handle_send_frame(self.ui))
+        self.ui.repeatMsg.stateChanged.connect(self.toggle_period_box)
 
-        # Example usage:
-        can_frame_example = CANFrame(15, 4, [10, 20, 30, 40])
-        self.canManager.add_or_update_frame(self.ui.canTransmitTable, can_frame_example, 100)
-    
-    
+    def toggle_period_box(self, state):
+        if state == Qt.Checked:
+            self.ui.periodBox.setEnabled(True)
+        else:
+            self.ui.periodBox.setEnabled(False)
+
