@@ -66,6 +66,7 @@ class Ui_MainWindow(object):
         self.repeatMsg.setGeometry(QRect(630, 50, 16, 22))
         self.periodBox = QLineEdit(self.canTransmit)
         self.periodBox.setObjectName(u"periodBox")
+        self.periodBox.setEnabled(False)
         self.periodBox.setGeometry(QRect(740, 50, 113, 24))
         self.periodLabel = QLabel(self.canTransmit)
         self.periodLabel.setObjectName(u"periodLabel")

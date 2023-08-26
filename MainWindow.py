@@ -21,7 +21,7 @@ class MainWindow(QMainWindow):
         self.canManager.init_can_table_model(self.ui.canAnalyseTable)
         self.canManager.init_can_table_model(self.ui.canTransmitTable)
         
-        self.rowDataAvailable.connect(self.add_row)
+        # self.rowDataAvailable.connect(self.add_row)
 
         self.ui.sendCANFrame.clicked.connect(lambda: self.canManager.handle_send_frame(self.ui))
 
@@ -30,14 +30,3 @@ class MainWindow(QMainWindow):
         self.canManager.add_or_update_frame(self.ui.canTransmitTable, can_frame_example, 100)
     
     
-    
-
-    def add_row(self, data_list):
-        """Utility function to add a row to the model."""
-        print("penis")
-        items = [QStandardItem(str(item)) for item in data_list]
-        self.model.appendRow(items)
-    
-    def emit(self):
-        data = ["sad", "asd", "dsa"]
-        self.rowDataAvailable.emit(data)

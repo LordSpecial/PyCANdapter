@@ -157,6 +157,9 @@
       </property>
      </widget>
      <widget class="QLineEdit" name="periodBox">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <property name="geometry">
        <rect>
         <x>740</x>

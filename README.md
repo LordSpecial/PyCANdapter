@@ -18,7 +18,7 @@ python -m venv venv
 2. Open the virtual Environment
 
 ```
-.\evnv\Scripts\activate
+.\venv\Scripts\activate
 ```
 
 3. install packages:

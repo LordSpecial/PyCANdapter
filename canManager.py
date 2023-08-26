@@ -1,85 +1,119 @@
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, QTimer
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from PySide6.QtWidgets import QMainWindow, QHeaderView
 from homeWindow import Ui_MainWindow
-from CANdapter import CANFrame
+from CANdapter import CANFrame, CANDapter
 
 class CAN_Manager ():
     def __init__(self) -> None:
-        pass
+        self.qtimers = {}
+
+        self.canDapter = CANDapter()
 
     def init_can_table_model(self, table):
-        newModel = QStandardItemModel(5, 12)
+        newModel = QStandardItemModel(1, 12)
         newModel.setHorizontalHeaderLabels(["CAN ID", "Length", "Byte 1", "Byte 2", "Byte 3", "Byte 4", "Byte 5", "Byte 6", "Byte 7", "Byte 8", "Count", "Period"])
         table.setModel(newModel)
         table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         table.verticalHeader().setVisible(False)
 
-    def add_or_update_frame(self, table, can_frame, transmit_period):
+    def add_or_update_frame(self, table, can_frame):
         model = table.model()
 
-        # Try to find the row with the same frame_id
-        row_to_update = -1
+        # Check if CAN frame ID exists in the table
         for row in range(model.rowCount()):
-            item = model.item(row, 0)
-            if item and item.text() == str(can_frame.frame_id):
-                row_to_update = row
-                break
+            if model.item(row, 0) and model.item(row, 0).text() == str(can_frame.frame_id):
+                # Always update the row
+                for i in range(8):  # Assuming a maximum of 8 bytes for a CAN message
+                    if i < len(can_frame.data):
+                        model.setItem(row, 2 + i, QStandardItem(str(can_frame.data[i])))
+                    else:
+                        model.setItem(row, 2 + i, QStandardItem(""))  # Set empty string if byte data is not present
 
-        # If found, update the count in the penultimate column
-        if row_to_update != -1:
-            count_item = model.item(row_to_update, 10)
-            if count_item:  # check if the count_item is not None
-                current_count = int(count_item.text())
-                count_item.setText(str(current_count + 1))
-        else:  # Else, add a new row
-            items = []
+                # Update length and period
+                model.setItem(row, 1, QStandardItem(str(can_frame.length)))
+                model.setItem(row, 11, QStandardItem(str(can_frame.period)))  # 11 is the index for the period column
+                
+                # Increment the counter 
+                counter_item = model.item(int(row), model.columnCount() - 2)
+                count = int(counter_item.text()) + 1
+                counter_item.setText(str(count))
+                return
 
-            # CAN ID
-            items.append(QStandardItem(str(can_frame.frame_id)))
+        # If CAN frame ID is not found, add a new row
+        items = [QStandardItem(str(can_frame.frame_id)), QStandardItem(str(can_frame.length))]
+        for byte in can_frame.data:
+            items.append(QStandardItem(str(byte)))
+        
+        while len(items) < 10:  # To match the total columns excluding period and counter
+            items.append(QStandardItem(""))
 
-            # Length
-            items.append(QStandardItem(str(can_frame.length)))
+        items.append(QStandardItem("1"))  # Initial count value of one
+        items.append(QStandardItem(str(can_frame.period)))
 
-            # Data Bytes
-            for i in range(8):
-                byte_value = can_frame.data[i] if i < len(can_frame.data) else ''
-                items.append(QStandardItem(str(byte_value)))
-
-            # Count (initialize to 1)
-            items.append(QStandardItem("1"))
-
-            # Period
-            items.append(QStandardItem(str(transmit_period)))
-
-            model.appendRow(items)
-
+        model.appendRow(items)
     
     def handle_send_frame(self, ui):
-            if ui.idBox.text() == '':
-                return
-            try:
-                frame_id = int(ui.idBox.text())
-                length = int(ui.lengthBox.text())
-                hex_msg = ui.msgBox.text().strip()
+        can_frame = self.compile_frame(ui)
+                
+        # If the message is not repeating, send once and return
+        if not ui.repeatMsg.isChecked():
+            self.send_frame(ui, can_frame)
 
-                # Get transmit_period only if repeatMsg is checked
-                if ui.repeatMsg.isChecked():
-                    transmit_period = int(ui.periodBox.text())
-                else:
-                    transmit_period = 'N/A'
+            # Delete any old timers sending this frame
+            if can_frame.frame_id in self.qtimers:
+                self.qtimers[can_frame.frame_id].stop()
+                del self.qtimers[can_frame.frame_id]
+            return
+        
+        # If the frame is already being sent repeatedly, stop the previous timer
+        if can_frame.frame_id in self.qtimers:
+            self.qtimers[can_frame.frame_id].stop()
 
-                # Split Hex into parts
-                data_bytes = [int(hex_msg[i:i+2], 16) for i in range(0, len(hex_msg), 2)]
-                if length != len(data_bytes):
-                    raise ValueError(f"Length does not match the number of bytes provided. Expected {length} bytes but found {len(data_bytes)} bytes.")
+        # Make timer
+        timer = QTimer()
+        timer.timeout.connect(lambda: self.send_frame(ui, can_frame))
+        timer.start(can_frame.period)
 
-                can_frame = CANFrame(frame_id, length, data_bytes)
+        # Save this timer, so we can manage/stop it later if needed
+        self.qtimers[can_frame.frame_id] = timer
 
-                self.add_or_update_frame(ui.canTransmitTable, can_frame, transmit_period)
-                ui.idBox.clear()
-                ui.lengthBox.clear()
-                ui.msgBox.clear()
-                ui.periodBox.clear()
-            except ValueError as ve:
-                print(f"Error: {ve}")
+        ui.idBox.clear()
+        ui.lengthBox.clear()
+        ui.msgBox.clear()
+        ui.periodBox.clear()
+
+    def compile_frame(self, ui):
+        if ui.idBox.text() == '':
+            return
+        try:
+            frame_id = int(ui.idBox.text())
+            length = int(ui.lengthBox.text())
+            hex_msg = ui.msgBox.text().strip()
+
+            # Get transmit_period only if repeatMsg is checked
+            if ui.repeatMsg.isChecked():
+                transmit_period = int(ui.periodBox.text())
+            else:
+                transmit_period = -1
+
+            # Split Hex into parts
+            data_bytes = [int(hex_msg[i:i+2], 16) for i in range(0, len(hex_msg), 2)]
+            if length != len(data_bytes):
+                raise ValueError(f"Length does not match the number of bytes provided. Expected {length} bytes but found {len(data_bytes)} bytes.")
+
+            # Create CAN Frame
+            can_frame = CANFrame(frame_id, length, data_bytes, transmit_period)
+        except ValueError as ve:
+            print(f"Error: {ve}")
+
+        return can_frame
+
+    def send_frame(self, ui, can_frame):        
+        # TODO: replace this with.
+        self.handle_incoming_frame(ui, can_frame)
+        self.canDapter.send_can_message(can_frame)
+
+    def handle_incoming_frame(self, ui, can_frame):
+        #self.add_or_update_frame(ui.canAnalyseTable, can_frame)
+        self.add_or_update_frame(ui.canTransmitTable, can_frame)

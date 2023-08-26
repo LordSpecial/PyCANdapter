@@ -5,7 +5,7 @@ CR = '\015'
 
 
 class CANFrame:
-    def __init__(self, frame_id, length, data, period='N/A'):
+    def __init__(self, frame_id, length, data, period):
         self.frame_id = frame_id
         self.length = length
         self.data = data
@@ -33,14 +33,19 @@ class CANFrame:
 
 
 class CANDapter:
-    def __init__(self, port, debug=True):
+    def __init__(self, debug=True):
         self.debug = debug
-        self.port = port
+        self.status = 'disconnected'
+        
+    def start_can(self, port):
         self.serial = serial.Serial(port)
+        self.status = 'connected'
 
     def send_can_message(self, can_frame: CANFrame):
-        command = b'T' + can_frame.to_bytes()
-        self.send_command(command)
+        print('SEND_FRAME')
+        if self.status == 'connected':
+            command = b'T' + can_frame.to_bytes()
+            self.send_command(command)
 
     def send_command(self, command: bytes):
         if not self.serial.is_open:
