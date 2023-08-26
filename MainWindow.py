@@ -10,7 +10,6 @@ from CANdapter import CANFrame
 class MainWindow(QMainWindow):
     # Signals
     rowDataAvailable = Signal(list)
-    rowDataAvailable = Signal(list)
 
     def __init__(self):
         super(MainWindow, self).__init__()

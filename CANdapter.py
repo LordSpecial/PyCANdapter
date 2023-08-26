@@ -36,6 +36,9 @@ class CANDapter:
     def __init__(self, debug=True):
         self.debug = debug
         self.status = 'disconnected'
+
+        self.receiveMonitor = CANMonitorThread(self)
+        
         
     def start_can(self, port):
         self.serial = serial.Serial(port)
@@ -44,6 +47,8 @@ class CANDapter:
         self.can_dapter.set_bitrate(250)
         self.can_dapter.open_channel()
 
+        self.receiveMonitor.start()
+        
         self.status = 'connected'
 
     def send_can_message(self, can_frame: CANFrame):
@@ -137,7 +142,8 @@ class CANMonitorThread(QThread):
     def __init__(self, canDapter: CANDapter):
         super().__init__()
         self.canDapter = canDapter
-        self.running = True
+        self.running = False
+        self.run()
 
     def run(self):
         while self.running:
@@ -146,3 +152,6 @@ class CANMonitorThread(QThread):
 
     def stop(self):
         self.running = False
+
+    def start(self): 
+        self.running = True

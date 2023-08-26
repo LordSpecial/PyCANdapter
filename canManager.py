@@ -1,4 +1,4 @@
-from PySide6.QtCore import Signal, QTimer
+from PySide6.QtCore import Signal, QTimer, QElapsedTimer
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from PySide6.QtWidgets import QMainWindow, QHeaderView
 from homeWindow import Ui_MainWindow
@@ -6,9 +6,12 @@ from CANdapter import CANFrame, CANDapter, CANMonitorThread
 
 class CAN_Manager ():
     def __init__(self) -> None:
-        self.qtimers = {}
+        self.sendQTimers = {}
+        self.receiveQTimers: QElapsedTimer = {}
 
         self.canDapter = CANDapter()
+        
+        self.canDapter.receiveMonitor.messageReceived.connect(self.handle_received_message)  
 
     def init_can_table_model(self, table):
         newModel = QStandardItemModel(1, 12)
@@ -17,7 +20,7 @@ class CAN_Manager ():
         table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         table.verticalHeader().setVisible(False)
 
-    def add_or_update_frame(self, table, can_frame):
+    def add_or_update_frame(self, table, can_frame: CANFrame):
         model = table.model()
 
         # Check if CAN frame ID exists in the table
@@ -61,14 +64,14 @@ class CAN_Manager ():
             self.send_frame(ui, can_frame)
 
             # Delete any old timers sending this frame
-            if can_frame.frame_id in self.qtimers:
-                self.qtimers[can_frame.frame_id].stop()
-                del self.qtimers[can_frame.frame_id]
+            if can_frame.frame_id in self.sendQTimers:
+                self.sendQTimers[can_frame.frame_id].stop()
+                del self.sendQTimers[can_frame.frame_id]
             return
         
         # If the frame is already being sent repeatedly, stop the previous timer
-        if can_frame.frame_id in self.qtimers:
-            self.qtimers[can_frame.frame_id].stop()
+        if can_frame.frame_id in self.sendQTimers:
+            self.sendQTimers[can_frame.frame_id].stop()
 
         # Make timer
         timer = QTimer()
@@ -76,7 +79,7 @@ class CAN_Manager ():
         timer.start(can_frame.period)
 
         # Save this timer, so we can manage/stop it later if needed
-        self.qtimers[can_frame.frame_id] = timer
+        self.sendQTimers[can_frame.frame_id] = timer
 
         ui.idBox.clear()
         ui.lengthBox.clear()
@@ -109,11 +112,22 @@ class CAN_Manager ():
 
         return can_frame
 
-    def send_frame(self, ui, can_frame):        
-        # TODO: replace this with.
-        self.handle_incoming_frame(ui, can_frame)
+    def send_frame(self, can_frame):        
         self.canDapter.send_can_message(can_frame)
+        self.add_or_update_frame(self.ui.canAnalyseTable, can_frame)
+        self.add_or_update_frame(self.ui.canTransmitTable, can_frame)
 
-    def handle_incoming_frame(self, ui, can_frame):
-        self.add_or_update_frame(ui.canAnalyseTable, can_frame)
-        self.add_or_update_frame(ui.canTransmitTable, can_frame)
+    def handle_received_message(self, can_frame: CANFrame):
+        # Check if frame has a timer or not, if not make one
+        if can_frame.frame_id in self.receiveQTimers:
+            can_frame.period = self.receiveQTimers[can_frame.frame_id].TickCounter.elapsed()
+        else:
+            self.receiveQTimers[can_frame.frame_id] = QElapsedTimer()
+            can_frame.period = -1 # set as -1 for initial value
+        
+        # Reset Timer
+        self.receiveQTimers[can_frame.frame_id].start()
+        
+        # Update Analyser
+        self.add_or_update_frame(self.ui.canAnalyseTable, can_frame)
+
