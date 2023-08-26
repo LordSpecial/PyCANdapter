@@ -2,7 +2,7 @@ from PySide6.QtCore import Signal, QTimer
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from PySide6.QtWidgets import QMainWindow, QHeaderView
 from homeWindow import Ui_MainWindow
-from CANdapter import CANFrame, CANDapter
+from CANdapter import CANFrame, CANDapter, CANMonitorThread
 
 class CAN_Manager ():
     def __init__(self) -> None:
@@ -115,5 +115,5 @@ class CAN_Manager ():
         self.canDapter.send_can_message(can_frame)
 
     def handle_incoming_frame(self, ui, can_frame):
-        #self.add_or_update_frame(ui.canAnalyseTable, can_frame)
+        self.add_or_update_frame(ui.canAnalyseTable, can_frame)
         self.add_or_update_frame(ui.canTransmitTable, can_frame)

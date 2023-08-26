@@ -1,5 +1,5 @@
 import serial
-
+from PySide6.QtCore import QThread, Signal
 
 CR = '\015'
 
@@ -128,3 +128,21 @@ class CANDapter:
             can_message[3],
             data
         )
+
+
+class CANMonitorThread(QThread):
+    # Signal sent when message is received containing the message
+    messageReceived = Signal(object)
+
+    def __init__(self, canDapter: CANDapter):
+        super().__init__()
+        self.canDapter = canDapter
+        self.running = True
+
+    def run(self):
+        while self.running:
+            message = self.canDapter.read_can_message()
+            self.messageReceived.emit(message)
+
+    def stop(self):
+        self.running = False
