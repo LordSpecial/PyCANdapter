@@ -5,10 +5,11 @@ CR = '\015'
 
 
 class CANFrame:
-    def __init__(self, frame_id, length, data):
+    def __init__(self, frame_id, length, data, period='N/A'):
         self.frame_id = frame_id
         self.length = length
         self.data = data
+        self.period = period
 
     def __str__(self):
         return f'id: {self.frame_id} | length: {self.length} | data: {self.data}'

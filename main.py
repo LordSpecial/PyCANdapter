@@ -16,7 +16,6 @@ def main():
     window = MainWindow()
     window.show()
     app.exec()
-    window.init_candaptor
 
 if __name__ == '__main__':
     main()

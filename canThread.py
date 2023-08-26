@@ -28,3 +28,4 @@ class MonitorThread(QThread):
     def check_condition(self):
         # Dummy function that randomly returns True or False
         return random.choice([True, False])
+`~`
