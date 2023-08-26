@@ -3,29 +3,18 @@ import time, random
 from CANdapter import CANDapter, CANFrame
 
 class MonitorThread(QThread):
-    condition_met = Signal()
+    # Signal sent when message is received containing the message
+    messageReceived = Signal(object)
 
-    def __init__(self):
-        #init CANDaptor
-        self.can_dapter = CANDapter(port="COM3")
-    
-        self.can_dapter.close_channel()
-        self.can_dapter.set_bitrate(250)
-        self.can_dapter.open_channel()
-        
-        msg = CANFrame(100, 4, [10, 10, 10, 10])
-        self.can_dapter.send_can_message(msg)
+    def __init__(self, canDapter: CANDapter):
+        super().__init__()
+        self.canDapter = canDapter
+        self.running = True
 
-    def send_can_msg(self, frame):
-        msg = CANFrame(100, 4, [10, 10, 10, 10])
-        self.can_dapter.send_can_message(msg)
     def run(self):
-        while True:
-            if self.check_condition():
-                self.condition_met.emit()
-            time.sleep(1)  # Sleep for a while before checking again
+        while self.running:
+            message = self.canDapter.read_can_message()
+            self.messageReceived.emit(message)
 
-    def check_condition(self):
-        # Dummy function that randomly returns True or False
-        return random.choice([True, False])
-`~`
+    def stop(self):
+        self.running = False

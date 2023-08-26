@@ -39,6 +39,11 @@ class CANDapter:
         
     def start_can(self, port):
         self.serial = serial.Serial(port)
+
+        self.can_dapter.close_channel()
+        self.can_dapter.set_bitrate(250)
+        self.can_dapter.open_channel()
+
         self.status = 'connected'
 
     def send_can_message(self, can_frame: CANFrame):
