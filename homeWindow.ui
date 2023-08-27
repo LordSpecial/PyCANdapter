@@ -28,7 +28,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>4</number>
     </property>
     <widget class="QWidget" name="canAnalyser">
      <attribute name="title">
@@ -230,7 +230,154 @@
      <attribute name="title">
       <string>Settings</string>
      </attribute>
+     <widget class="QPushButton" name="comReload">
+      <property name="geometry">
+       <rect>
+        <x>40</x>
+        <y>90</y>
+        <width>80</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Refresh</string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="comSelect">
+      <property name="geometry">
+       <rect>
+        <x>230</x>
+        <y>90</y>
+        <width>311</width>
+        <height>24</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="baudSelect">
+      <property name="geometry">
+       <rect>
+        <x>650</x>
+        <y>90</y>
+        <width>201</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="currentText">
+       <string>250 kbps</string>
+      </property>
+      <property name="currentIndex">
+       <number>5</number>
+      </property>
+      <item>
+       <property name="text">
+        <string>10 kbps</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>20 kbps</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>50 kbps</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>100 kbps</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>125 kbps</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>250 kbps</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>500 kbps</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>800 kbps</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>1 Mbps</string>
+       </property>
+      </item>
+     </widget>
+     <widget class="QLabel" name="label">
+      <property name="geometry">
+       <rect>
+        <x>130</x>
+        <y>90</y>
+        <width>91</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Select COM port:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_2">
+      <property name="geometry">
+       <rect>
+        <x>550</x>
+        <y>90</y>
+        <width>91</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Selet Baud Rate:</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="connectBtn">
+      <property name="geometry">
+       <rect>
+        <x>870</x>
+        <y>90</y>
+        <width>80</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Connect</string>
+      </property>
+     </widget>
     </widget>
+   </widget>
+   <widget class="QLabel" name="label_3">
+    <property name="geometry">
+     <rect>
+      <x>800</x>
+      <y>11</y>
+      <width>461</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::RightToLeft</enum>
+    </property>
+    <property name="text">
+     <string>CANdaptor NOT CONNECTED</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
    </widget>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>

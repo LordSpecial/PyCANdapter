@@ -1,4 +1,4 @@
-import serial
+import serial, serial.tools.list_ports
 from PySide6.QtCore import QThread, Signal
 
 CR = '\015'
@@ -134,6 +134,10 @@ class CANDapter:
             data
         )
 
+    def get_com_ports(self):
+        ports = serial.tools.list_ports.comports()
+        port_list = [f"{port.device} - {port.description}" for port in ports]
+        return port_list
 
 class CANMonitorThread(QThread):
     # Signal sent when message is received containing the message

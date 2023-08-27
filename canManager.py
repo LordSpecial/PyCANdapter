@@ -130,4 +130,3 @@ class CAN_Manager ():
         
         # Update Analyser
         self.add_or_update_frame(self.ui.canAnalyseTable, can_frame)
-

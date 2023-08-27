@@ -15,9 +15,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QHeaderView, QLabel,
-    QLineEdit, QMainWindow, QPushButton, QSizePolicy,
-    QStatusBar, QTabWidget, QTableView, QWidget)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QHeaderView,
+    QLabel, QLineEdit, QMainWindow, QPushButton,
+    QSizePolicy, QStatusBar, QTabWidget, QTableView,
+    QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -91,7 +92,42 @@ class Ui_MainWindow(object):
         self.tabWidget.addTab(self.canPlayback, "")
         self.settings = QWidget()
         self.settings.setObjectName(u"settings")
+        self.comReload = QPushButton(self.settings)
+        self.comReload.setObjectName(u"comReload")
+        self.comReload.setGeometry(QRect(40, 90, 80, 24))
+        self.comSelect = QComboBox(self.settings)
+        self.comSelect.setObjectName(u"comSelect")
+        self.comSelect.setGeometry(QRect(230, 90, 311, 24))
+        self.baudSelect = QComboBox(self.settings)
+        self.baudSelect.addItem("")
+        self.baudSelect.addItem("")
+        self.baudSelect.addItem("")
+        self.baudSelect.addItem("")
+        self.baudSelect.addItem("")
+        self.baudSelect.addItem("")
+        self.baudSelect.addItem("")
+        self.baudSelect.addItem("")
+        self.baudSelect.addItem("")
+        self.baudSelect.setObjectName(u"baudSelect")
+        self.baudSelect.setGeometry(QRect(650, 90, 201, 24))
+        self.label = QLabel(self.settings)
+        self.label.setObjectName(u"label")
+        self.label.setGeometry(QRect(130, 90, 91, 21))
+        self.label_2 = QLabel(self.settings)
+        self.label_2.setObjectName(u"label_2")
+        self.label_2.setGeometry(QRect(550, 90, 91, 21))
+        self.connectBtn = QPushButton(self.settings)
+        self.connectBtn.setObjectName(u"connectBtn")
+        self.connectBtn.setGeometry(QRect(870, 90, 80, 24))
         self.tabWidget.addTab(self.settings, "")
+        self.label_3 = QLabel(self.centralwidget)
+        self.label_3.setObjectName(u"label_3")
+        self.label_3.setGeometry(QRect(800, 11, 461, 20))
+        font = QFont()
+        font.setPointSize(12)
+        self.label_3.setFont(font)
+        self.label_3.setLayoutDirection(Qt.RightToLeft)
+        self.label_3.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
         MainWindow.setCentralWidget(self.centralwidget)
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName(u"statusbar")
@@ -99,7 +135,8 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(4)
+        self.baudSelect.setCurrentIndex(5)
 
 
         QMetaObject.connectSlotsByName(MainWindow)
@@ -120,6 +157,22 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.canTransmit), QCoreApplication.translate("MainWindow", u"CAN Transmitter", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.canLogger), QCoreApplication.translate("MainWindow", u"CAN Logging", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.canPlayback), QCoreApplication.translate("MainWindow", u"CAN Playback", None))
+        self.comReload.setText(QCoreApplication.translate("MainWindow", u"Refresh", None))
+        self.baudSelect.setItemText(0, QCoreApplication.translate("MainWindow", u"10 kbps", None))
+        self.baudSelect.setItemText(1, QCoreApplication.translate("MainWindow", u"20 kbps", None))
+        self.baudSelect.setItemText(2, QCoreApplication.translate("MainWindow", u"50 kbps", None))
+        self.baudSelect.setItemText(3, QCoreApplication.translate("MainWindow", u"100 kbps", None))
+        self.baudSelect.setItemText(4, QCoreApplication.translate("MainWindow", u"125 kbps", None))
+        self.baudSelect.setItemText(5, QCoreApplication.translate("MainWindow", u"250 kbps", None))
+        self.baudSelect.setItemText(6, QCoreApplication.translate("MainWindow", u"500 kbps", None))
+        self.baudSelect.setItemText(7, QCoreApplication.translate("MainWindow", u"800 kbps", None))
+        self.baudSelect.setItemText(8, QCoreApplication.translate("MainWindow", u"1 Mbps", None))
+
+        self.baudSelect.setCurrentText(QCoreApplication.translate("MainWindow", u"250 kbps", None))
+        self.label.setText(QCoreApplication.translate("MainWindow", u"Select COM port:", None))
+        self.label_2.setText(QCoreApplication.translate("MainWindow", u"Selet Baud Rate:", None))
+        self.connectBtn.setText(QCoreApplication.translate("MainWindow", u"Connect", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.settings), QCoreApplication.translate("MainWindow", u"Settings", None))
+        self.label_3.setText(QCoreApplication.translate("MainWindow", u"CANdaptor NOT CONNECTED", None))
     # retranslateUi
 
