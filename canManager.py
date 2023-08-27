@@ -1,17 +1,18 @@
 from PySide6.QtCore import Signal, QTimer, QElapsedTimer, Qt
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor
 from PySide6.QtWidgets import QMainWindow, QHeaderView
-from homeWindow import Ui_MainWindow
-from CANdapter import CANFrame, CANDapter, CANMonitorThread
+from CANdapter import CANFrame, CANDapter
 
 class CAN_Manager ():
-    def __init__(self) -> None:
+    def __init__(self, ui) -> None:
+
+        self.ui = ui
         self.sendQTimers = {}
         self.receiveQTimers: QElapsedTimer = {}
-
-        self.canDapter = CANDapter()
         
-        self.canDapter.receiveMonitor.messageReceived.connect(self.handle_received_message)  
+        self.canDapter = CANDapter()
+        self.canDapter.messageReceived.connect(self.handle_received_message)  
+        
 
     def init_can_table_model(self, table):
         newModel = QStandardItemModel(1, 12)
@@ -68,7 +69,7 @@ class CAN_Manager ():
                 
         # If the message is not repeating, send once and return
         if not ui.repeatMsg.isChecked():
-            self.send_frame(ui, can_frame)
+            self.send_frame(can_frame)
 
             # Delete any old timers sending this frame
             if can_frame.frame_id in self.sendQTimers:
@@ -82,7 +83,7 @@ class CAN_Manager ():
 
         # Make timer
         timer = QTimer()
-        timer.timeout.connect(lambda: self.send_frame(ui, can_frame))
+        timer.timeout.connect(lambda: self.send_frame(can_frame))
         timer.start(can_frame.period)
 
         # Save this timer, so we can manage/stop it later if needed
@@ -125,9 +126,11 @@ class CAN_Manager ():
         self.add_or_update_frame(ui.canTransmitTable, can_frame, True)
 
     def handle_received_message(self, can_frame: CANFrame):
+        if can_frame == None:
+            return
         # Check if frame has a timer or not, if not make one
         if can_frame.frame_id in self.receiveQTimers:
-            can_frame.period = self.receiveQTimers[can_frame.frame_id].TickCounter.elapsed()
+            can_frame.period = self.receiveQTimers[can_frame.frame_id].elapsed()
         else:
             self.receiveQTimers[can_frame.frame_id] = QElapsedTimer()
             can_frame.period = -1 # set as -1 for initial value
