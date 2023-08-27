@@ -34,6 +34,7 @@ class CANFrame:
 class CANDapter(QThread):
     # Signal sent when message is received containing the message
     messageReceived = Signal(object)
+    connectionStatus = Signal(object)
 
     def __init__(self, debug=True):
         super().__init__()
@@ -41,11 +42,11 @@ class CANDapter(QThread):
         self.status = 'disconnected'
         
         
-    def start_can(self, port):
+    def start_can(self, baudSelect, port):
         self.serial = serial.Serial(port)
 
         self.close_channel()
-        self.set_bitrate(250) # TODO: watch input box instead
+        self.set_bitrate(baudSelect)
         self.open_channel()
         
         self.status = 'connected'
@@ -93,26 +94,7 @@ class CANDapter(QThread):
 
         returns bool depending on if successfully set
         """
-        if rate == 10:
-            command = b'S0'
-        elif rate == 20:
-            command = b'S1'
-        elif rate == 50:
-            command = b'S2'
-        elif rate == 100:
-            command = b'S3'
-        elif rate == 125:
-            command = b'S4'
-        elif rate == 250:
-            command = b'S5'
-        elif rate == 500:
-            command = b'S6'
-        elif rate == 800:
-            command = b'S7'
-        elif rate == 1000:
-            command = b'S8'
-        else:
-            raise ValueError("Rate given is not available on this device")
+        command = b'0' + format(rate, 'b')
 
         return self.send_command(command)
 

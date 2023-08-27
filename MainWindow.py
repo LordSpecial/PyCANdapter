@@ -1,11 +1,9 @@
 import sys
 
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QStandardItemModel, QStandardItem
 from PySide6.QtWidgets import QMainWindow, QHeaderView
 from homeWindow import Ui_MainWindow  
 from canManager import CAN_Manager
-from CANdapter import CANFrame
 
 
 class MainWindow(QMainWindow):
@@ -24,12 +22,14 @@ class MainWindow(QMainWindow):
         self.canManager.init_can_table_model(self.ui.canAnalyseTable)
         self.canManager.init_can_table_model(self.ui.canTransmitTable)
         
-        # self.rowDataAvailable.connect(self.add_row)
+        # Connect UI updating signals
+        self.canManager.canDapter.messageReceived.connect(lambda: self.updateConnectionStatus())  
 
+        # Connect ui button signals
         self.ui.sendCANFrame.clicked.connect(lambda: self.canManager.handle_send_frame(self.ui))
         self.ui.repeatMsg.stateChanged.connect(self.toggle_period_box)
         self.ui.comReload.clicked.connect(self.update_com_ports)
-        self.ui.connectBtn.clicked.connect(lambda: self.canManager.canDapter.start_can(self.ui.comSelect.currentText().split(" ", 1)[0])) # get the actual com port
+        self.ui.connectBtn.clicked.connect(lambda: self.canManager.canDapter.start_can(self.ui.baudSelect.currentIndex(),self.ui.comSelect.currentText().split(" ", 1)[0])) # get the actual com port
 
     def toggle_period_box(self):
         if self.ui.repeatMsg.checkState() == Qt.Checked:
@@ -42,6 +42,13 @@ class MainWindow(QMainWindow):
         self.ui.comSelect.clear()
         # Add new items
         self.ui.comSelect.addItems(self.canManager.canDapter.get_com_ports())
+
+    def updateConnectionStatus(self, connectionPort = None):
+        if connectionPort == None:
+            self.ui.connectionStatus.setText('<font color="red">CANdapter NOT CONNECTED</font>')
+        else:
+            self.ui.connectionStatus.setText(f"CANdapter CONNECTED in {connectionPort}")
+
     
 
     

@@ -355,7 +355,7 @@
      </widget>
     </widget>
    </widget>
-   <widget class="QLabel" name="label_3">
+   <widget class="QLabel" name="connectionStatus">
     <property name="geometry">
      <rect>
       <x>800</x>

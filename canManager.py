@@ -1,6 +1,6 @@
-from PySide6.QtCore import Signal, QTimer, QElapsedTimer, Qt
+from PySide6.QtCore import  QTimer, QElapsedTimer, Qt
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor
-from PySide6.QtWidgets import QMainWindow, QHeaderView
+from PySide6.QtWidgets import QHeaderView
 from CANdapter import CANFrame, CANDapter
 
 class CAN_Manager ():
@@ -11,7 +11,8 @@ class CAN_Manager ():
         self.receiveQTimers: QElapsedTimer = {}
         
         self.canDapter = CANDapter()
-        self.canDapter.messageReceived.connect(self.handle_received_message)  
+        self.canDapter.messageReceived.connect(self.handle_received_message)
+        
         
 
     def init_can_table_model(self, table):
@@ -83,7 +84,7 @@ class CAN_Manager ():
 
         # Make timer
         timer = QTimer()
-        timer.timeout.connect(lambda: self.send_frame(can_frame))
+        timer.timeout.connect(lambda: self.send_frame(self.ui, can_frame))
         timer.start(can_frame.period)
 
         # Save this timer, so we can manage/stop it later if needed
