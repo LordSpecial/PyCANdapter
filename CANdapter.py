@@ -1,7 +1,6 @@
 import serial, serial.tools.list_ports
 from PySide6.QtCore import QThread, Signal
-
-CR = '\015'
+CR = b'\015' # octal
 
 
 class CANFrame:
@@ -32,27 +31,28 @@ class CANFrame:
         return bytes(identifier, 'ascii') + bytes(length, 'ascii') + data
 
 
-class CANDapter:
+class CANDapter(QThread):
+    # Signal sent when message is received containing the message
+    messageReceived = Signal(object)
+
     def __init__(self, debug=True):
+        super().__init__()
         self.debug = debug
         self.status = 'disconnected'
-
-        self.receiveMonitor = CANMonitorThread(self)
         
         
     def start_can(self, port):
         self.serial = serial.Serial(port)
 
-        self.can_dapter.close_channel()
-        self.can_dapter.set_bitrate(250)
-        self.can_dapter.open_channel()
-
-        self.receiveMonitor.start()
+        self.close_channel()
+        self.set_bitrate(250) # TODO: watch input box instead
+        self.open_channel()
         
         self.status = 'connected'
+        
+        self.start()
 
     def send_can_message(self, can_frame: CANFrame):
-        print('SEND_FRAME')
         if self.status == 'connected':
             command = b'T' + can_frame.to_bytes()
             self.send_command(command)
@@ -61,7 +61,8 @@ class CANDapter:
         if not self.serial.is_open:
             return False
 
-        msg = b'\015' + command + b'\015'
+        self.status = 'sending'
+        msg = command + CR
         self.serial.write(msg)
         return_message = self.serial.read()
 
@@ -71,6 +72,10 @@ class CANDapter:
             print(f'Received Value: {return_message}')
             print(f'---------------------------------------')
 
+        if return_message == b'\x06' or True:
+            self.status = 'connected'
+            print("SUCCESSFUL SEND")
+            self.start()
         return return_message == b'\x06'
 
     def set_bitrate(self, rate: int) -> bool:
@@ -114,48 +119,50 @@ class CANDapter:
     def open_channel(self):
         return self.send_command(b'O')
 
-    def close_channel(self):
-        return self.send_command(b'C')
+    def run(self):
 
+        while self.status == 'connected':
+            message = self.read_can_message()
+            self.messageReceived.emit(message)
+    
     def _read_until(self):
         return self.serial.read_until(expected=b'\r')
 
     def read_can_message(self):
         can_message = str(self._read_until())[3:-3]
+                                              
+        # If transmitted then just ignore for now. though i think this might be the 0x06 confirms
+        if can_message[0] == 'x': 
+            return
+        # Determine if it's an extended ID
+        if len(can_message) > 11:
+            can_id = can_message[0:8]
+            dlc_start = 8
+        else:
+            can_id = can_message[0:3]
+            dlc_start = 3
+
+        data = [''] * int(can_message[dlc_start])
+
+        for idx, char in enumerate(can_message[dlc_start+1:]):
+            idx //= 2
+            data[idx] += str(char)
 
         data = [''] * int(can_message[3])
         for idx, char in enumerate(can_message[4:]):
             idx //= 2
             data[idx] += str(char)
-
         return CANFrame(
             can_message[0:3],
             can_message[3],
-            data
+            data,
+            -1
         )
 
+    def close_channel(self):
+        self.status == 'disconnected'
+        return self.send_command(b'C')
     def get_com_ports(self):
         ports = serial.tools.list_ports.comports()
         port_list = [f"{port.device} - {port.description}" for port in ports]
-        return port_list
-
-class CANMonitorThread(QThread):
-    # Signal sent when message is received containing the message
-    messageReceived = Signal(object)
-
-    def __init__(self, canDapter: CANDapter):
-        super().__init__()
-        self.canDapter = canDapter
-        self.running = False
-        self.run()
-
-    def run(self):
-        while self.running:
-            message = self.canDapter.read_can_message()
-            self.messageReceived.emit(message)
-
-    def stop(self):
-        self.running = False
-
-    def start(self): 
-        self.running = True
+        return port_list  
