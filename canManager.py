@@ -1,5 +1,5 @@
-from PySide6.QtCore import Signal, QTimer, QElapsedTimer
-from PySide6.QtGui import QStandardItemModel, QStandardItem
+from PySide6.QtCore import Signal, QTimer, QElapsedTimer, Qt
+from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor
 from PySide6.QtWidgets import QMainWindow, QHeaderView
 from homeWindow import Ui_MainWindow
 from CANdapter import CANFrame, CANDapter, CANMonitorThread
@@ -20,7 +20,7 @@ class CAN_Manager ():
         table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         table.verticalHeader().setVisible(False)
 
-    def add_or_update_frame(self, table, can_frame: CANFrame):
+    def add_or_update_frame(self, table, can_frame: CANFrame, highlightChanges: bool = False):
         model = table.model()
 
         # Check if CAN frame ID exists in the table
@@ -29,14 +29,21 @@ class CAN_Manager ():
                 # Always update the row
                 for i in range(8):  # Assuming a maximum of 8 bytes for a CAN message
                     if i < len(can_frame.data):
-                        model.setItem(row, 2 + i, QStandardItem(str(can_frame.data[i])))
+                        if highlightChanges and model.item(row, 2 + i) and model.item(row, 2 + i).text() != str(can_frame.data[i]):
+                            item = QStandardItem(str(can_frame.data[i]))
+                            item.setBackground(QColor(Qt.red))
+                            model.setItem(row, 2 + i, item)
                     else:
                         model.setItem(row, 2 + i, QStandardItem(""))  # Set empty string if byte data is not present
 
                 # Update length and period
-                model.setItem(row, 1, QStandardItem(str(can_frame.length)))
+                if highlightChanges and model.item(row, 1) and model.item(row, 1).text() != str(can_frame.length):
+                    item = QStandardItem(str(can_frame.length))
+                    item.setBackground(QColor(Qt.red))
+                    model.setItem(row, 1, item)
+                    
                 model.setItem(row, 11, QStandardItem(str(can_frame.period)))  # 11 is the index for the period column
-                
+    
                 # Increment the counter 
                 counter_item = model.item(int(row), model.columnCount() - 2)
                 count = int(counter_item.text()) + 1
@@ -112,10 +119,10 @@ class CAN_Manager ():
 
         return can_frame
 
-    def send_frame(self, can_frame):        
+    def send_frame(self, ui, can_frame):        
         self.canDapter.send_can_message(can_frame)
-        self.add_or_update_frame(self.ui.canAnalyseTable, can_frame)
-        self.add_or_update_frame(self.ui.canTransmitTable, can_frame)
+        self.add_or_update_frame(ui.canAnalyseTable, can_frame)
+        self.add_or_update_frame(ui.canTransmitTable, can_frame, True)
 
     def handle_received_message(self, can_frame: CANFrame):
         # Check if frame has a timer or not, if not make one
