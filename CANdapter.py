@@ -33,10 +33,10 @@ class CANFrame:
 
 class CANDapter(QThread):
     # Signal sent when message is received containing the message
-    messageReceived = Signal(object)
-    connectionStatus = Signal(object)
+    messageReceived = Signal(CANFrame)
+    connectionStatus = Signal(str)
 
-    def __init__(self, debug=True):
+    def __init__(self, debug=False):
         super().__init__()
         self.debug = debug
         self.status = 'disconnected'
@@ -50,7 +50,7 @@ class CANDapter(QThread):
         self.open_channel()
         
         self.status = 'connected'
-        
+        self.connectionStatus.emit(port)
         self.start()
 
     def send_can_message(self, can_frame: CANFrame):
@@ -75,7 +75,8 @@ class CANDapter(QThread):
 
         if return_message == b'\x06' or True:
             self.status = 'connected'
-            print("SUCCESSFUL SEND")
+            if self.debug:
+                print("SUCCESSFUL SEND")
             self.start()
         return return_message == b'\x06'
 
@@ -94,7 +95,7 @@ class CANDapter(QThread):
 
         returns bool depending on if successfully set
         """
-        command = b'0' + format(rate, 'b')
+        command = b'S5'# + format(rate, 'b').encode('utf-8')
 
         return self.send_command(command)
 
@@ -111,18 +112,30 @@ class CANDapter(QThread):
         return self.serial.read_until(expected=b'\r')
 
     def read_can_message(self):
-        can_message = str(self._read_until())[3:-3]
-                                              
-        # If transmitted then just ignore for now. though i think this might be the 0x06 confirms
-        if can_message[0] == 'x': 
+        can_message = str(self._read_until())
+
+        if can_message.startswith("b'\\x"):
             return
-        # Determine if it's an extended ID
-        if len(can_message) > 11:
-            can_id = can_message[0:8]
+        # If not a full message ignore
+        if can_message[0] != 'b':
+            return
+
+        if self.debug:
+            print("raw " + can_message)
+        # If Extended ID then filter it.
+        if can_message[2] == 'x': 
+            can_id = f"(X) {can_message[3:11]}"
             dlc_start = 8
         else:
-            can_id = can_message[0:3]
+            can_id = can_message[3:6]
             dlc_start = 3
+        
+        can_message = can_message[3:-3]
+
+        if self.debug:
+            print("cropped " + can_message)
+            print("data length " + can_message[3])
+            print(f"enumurated {enumerate(can_message[4:])}")
 
         data = [''] * int(can_message[dlc_start])
 
@@ -130,13 +143,14 @@ class CANDapter(QThread):
             idx //= 2
             data[idx] += str(char)
 
-        data = [''] * int(can_message[3])
-        for idx, char in enumerate(can_message[4:]):
-            idx //= 2
-            data[idx] += str(char)
+        # data = [''] * int(can_message[3])
+        # for idx, char in enumerate(can_message[4:]):
+        #     idx //= 2
+        #     data[idx] += str(char)
+
         return CANFrame(
-            can_message[0:3],
-            can_message[3],
+            can_id,
+            can_message[dlc_start],
             data,
             -1
         )

@@ -64,6 +64,8 @@ class CAN_Manager ():
         items.append(QStandardItem(str(can_frame.period)))
 
         model.appendRow(items)
+
+        #table.sortByColumn(0, Qt.AscendingOrder) 
     
     def handle_send_frame(self, ui):
         can_frame = self.compile_frame(ui)

@@ -23,7 +23,8 @@ class MainWindow(QMainWindow):
         self.canManager.init_can_table_model(self.ui.canTransmitTable)
         
         # Connect UI updating signals
-        self.canManager.canDapter.messageReceived.connect(lambda: self.updateConnectionStatus())  
+        self.updateConnectionStatus(None)
+        self.canManager.canDapter.connectionStatus.connect(self.updateConnectionStatus)  
 
         # Connect ui button signals
         self.ui.sendCANFrame.clicked.connect(lambda: self.canManager.handle_send_frame(self.ui))
@@ -41,9 +42,11 @@ class MainWindow(QMainWindow):
         # Clear existing items
         self.ui.comSelect.clear()
         # Add new items
-        self.ui.comSelect.addItems(self.canManager.canDapter.get_com_ports())
+        allPorts = self.canManager.canDapter.get_com_ports()
+        filteredPorts = [port for port in allPorts if "Bluetooth" not in port]
+        self.ui.comSelect.addItems(filteredPorts)
 
-    def updateConnectionStatus(self, connectionPort = None):
+    def updateConnectionStatus(self, connectionPort):
         if connectionPort == None:
             self.ui.connectionStatus.setText('<font color="red">CANdapter NOT CONNECTED</font>')
         else:
