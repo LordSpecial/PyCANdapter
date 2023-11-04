@@ -147,7 +147,7 @@ class CANDapter:
                     data = data[index_of_t:]
                 except ValueError:
                     pass
-
+                # TODO: implement subscribers (maybe) or just a callback here to handle message received
                 # if data[0] == 't':
                 #     cleaned_data_list = clean_can_frame(data)
                 #     for cleaned_data in cleaned_data_list:
