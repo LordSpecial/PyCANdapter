@@ -5,18 +5,6 @@ import threading
 CR = '\015'
 
 
-def clamp(n, smallest, largest): return max(smallest, min(n, largest))
-
-
-hex_lookup = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F']
-
-
-def to_hex_char(val):
-    val = int(val)
-    hexed_char = hex_lookup[int(clamp(val,0,255)/16)] + hex_lookup[val % 16]
-    return hexed_char
-
-
 class CANFrame:
     def __init__(self, frame_id, length, data):
         self.frame_id = frame_id
@@ -39,7 +27,7 @@ class CANFrame:
         length = str(self.length)
         data = b''
         for item in self.data:
-            data += bytes(to_hex_char(item), 'ascii')
+            data += bytes(str(hex(item)).replace("0x",""), "ASCII")
 
         return bytes(identifier, 'ascii') + bytes(length, 'ascii') + data
 
@@ -90,22 +78,23 @@ class CANDapter:
 
     def __init__(self, port, baud_rate):
         # self.subs = subs
+
         self.serial_port = serial.Serial(
             port
         )
 
-        self.send_command_with_response(b'C')  # restart can dapter
+        self.send_command_with_response(b'C')  # restart candapter
 
         while not self.send_command_with_response(
                 get_baud_rate_command(self.baud_rate)
         ):
             pass
 
-        while not self.send_command_with_response(b'O'):  # start can dapter
+        while not self.send_command_with_response(b'O'):  # start candapter
             pass
 
         self.serial_thread = threading.Thread(target=self.read_serial)
-        # self.serial_thread.daemon = True
+        self.serial_thread.daemon = True
         self.serial_thread.start()
 
     def send_command_with_response(self, command: bytes):
