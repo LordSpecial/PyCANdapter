@@ -55,7 +55,7 @@ def main():
 
     # Frames can be explained at https://docs.fsae.co.nz/en/Electrons/HV/Accumulator/BMSEmulator
     # some have been excluded since i don't think they matter (6B0, 6B2, 618)
-    frame0x100 = CANFrame("100", 1, [0x0])
+    frame0x100 = CANFrame("100", 1, [0])
     frame0x6B1 = CANFrame("6B1", 8, [0xFF, 0xFF, 0xFF, 0xFF, 0x0, 0x0, 0x1, 0x0])  # no vars as bit 7 set in thread
     # TODO: check if CAN is big or little endian
     frame0x6B3 = CANFrame("6B3", 8, [0x00, int(high_volt * 1000), 0x00, 0xFF, 0x00, int(low_volt * 1000), int(num_cells), 0x0])
@@ -74,7 +74,7 @@ def main():
             motec_keepalive = not motec_keepalive
         elif user_input == 'b':  # BMS active
             print("BMSActive toggles")
-            bms_active = not bms_active
+            bms_active[0] = not bms_active[0]
         elif user_input == 'h':  # High cell voltage
             print("High Cell Fault toggles")
             if high_volt < 4:

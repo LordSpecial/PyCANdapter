@@ -5,6 +5,18 @@ import threading
 CR = '\015'
 
 
+def clamp(n, smallest, largest): return max(smallest, min(n, largest))
+
+
+hex_lookup = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F']
+
+
+def to_hex_char(val):
+    val = int(val)
+    hexed_char = hex_lookup[int(clamp(val,0,255)/16)] + hex_lookup[val % 16]
+    return hexed_char
+
+
 class CANFrame:
     def __init__(self, frame_id, length, data):
         self.frame_id = frame_id
@@ -27,7 +39,7 @@ class CANFrame:
         length = str(self.length)
         data = b''
         for item in self.data:
-            data += bytes(str(item), 'ascii')
+            data += bytes(to_hex_char(item), 'ascii')
 
         return bytes(identifier, 'ascii') + bytes(length, 'ascii') + data
 
