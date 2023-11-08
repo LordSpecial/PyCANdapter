@@ -13,23 +13,19 @@ def crc(message):
     message.data[7] = sum(message.data[:-1]) % 256
 
 
-def send_motec_keepalive(the_scheduler: sched.scheduler, candapter, frame0x100):
-    the_scheduler.enter(0.048, 1, action=send_motec_keepalive, argument=(the_scheduler, candapter, frame0x100))
+def send_motec_keepalive(candapter, frame0x100):
     candapter.send_can_message(frame0x100)
 
 
-def send_packstate_2(the_scheduler: sched.scheduler, candapter, frame0x6B1: CANFrame):
-    the_scheduler.enter(0.152, 1, action=send_packstate_2,
-                        argument=(the_scheduler, candapter, frame0x6B1))
+
+def send_packstate_2(candapter: CANDapter, frame0x6B1: CANFrame):
+    frame0x6B1.data[6] = not frame0x6B1.data[7]  # change rolling counter
+    crc(frame0x6B1)
     if enable_bms:
-        frame0x6B1.data[6] = not frame0x6B1.data[7]  # change rolling counter
-        crc(frame0x6B1)
         candapter.send_can_message(frame0x6B1)
 
 
-def send_cell_votages_temperatures(the_scheduler: sched.scheduler, candapter, frame0x6B3, frame0x6B4):
-    the_scheduler.enter(0.056, 1, action=send_cell_votages_temperatures,
-                        argument=(the_scheduler, candapter, frame0x6B3, frame0x6B4))
+def send_cell_votages_temperatures(candapter, frame0x6B3, frame0x6B4):
     if enable_bms:
         crc(frame0x6B3)
         crc(frame0x6B4)
@@ -59,6 +55,12 @@ def gui_event_loop():
             break
     window.close()
 
+def call_every(interval, func, *args):
+    while True:
+        start_time = time.time()
+        func(*args)
+        elapsed = time.time() - start_time
+        time.sleep(max(0, interval - elapsed))
 
 def main():
     global enable_bms
@@ -80,8 +82,7 @@ def main():
     frame0x100 = CANFrame("100", 1, [0x00])
     # TODO: Assign this one from docs
     frame0x6B1 = CANFrame("6B1", 8, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])  # no vars as bit 7 set in thread
-    frame0x6B3 = CANFrame("6B3", 8,
-                          [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, int(num_cells), 0x00])
+    frame0x6B3 = CANFrame("6B3", 8, [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, int(num_cells), 0x00])
     pack_float(high_volt, 10000, frame0x6B3, 0)
     pack_float(avg_volt, 10000, frame0x6B3, 2)
     pack_float(low_volt, 10000, frame0x6B3, 4)
@@ -92,14 +93,9 @@ def main():
     pack_float(avg_temp, 1000, frame0x6B4, 2)
     pack_float(low_temp, 1000, frame0x6B4, 4)
 
-    da_scheduler = sched.scheduler(time.monotonic, time.sleep)
-    da_scheduler.enter(0.048, 1, action=send_motec_keepalive,
-                       argument=(da_scheduler, candapter, frame0x100))
-    da_scheduler.enter(0.152, 1, action=send_packstate_2,
-                       argument=(da_scheduler, candapter, frame0x6B1))
-    da_scheduler.enter(0.056, 1, action=send_cell_votages_temperatures,
-                       argument=(da_scheduler, candapter, frame0x6B3, frame0x6B4))
-    da_scheduler.run(blocking=False)
+    threading.Thread(target=call_every, args=(0.048, send_motec_keepalive, candapter, frame0x100)).start()
+    threading.Thread(target=call_every, args=(0.152, send_packstate_2, candapter, frame0x6B1)).start()
+    #threading.Thread(target=call_every, args=(0.056, send_cell_votages_temperatures, candapter, frame0x6B3, frame0x6B4)).start()
 
     # instantiate the GUI event loop thread
     # threading.Thread(target=gui_event_loop, args=()).start()
@@ -110,8 +106,9 @@ def main():
             "Enter a character (m (toggle keepalive), b (toggle bms active), h (high cell voltage fault), t): ")
         if user_input == 'm':  # motec keepalive
             print("Keepalive toggles")
-            frame0x100.data[0] = not frame0x100.data[0]
+            frame0x100.data[7] = not frame0x100.data[7]
             motec_keepalive = not motec_keepalive
+
             print(datetime.utcnow().strftime('%H:%M:%S.%f'), str(frame0x100))
         elif user_input == 'b':  # BMS active
             print("BMSActive toggles")
