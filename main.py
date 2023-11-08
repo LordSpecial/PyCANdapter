@@ -62,8 +62,8 @@ def gui_event_loop():
 
 def main():
     global enable_bms
-    # candapter = CANDapter("/dev/ttyUSB0", 250)
-    candapter = fakeCANdapter()
+    candapter = CANDapter("COM5", 250)
+    #candapter = fakeCANdapter()
 
     motec_keepalive = 0
     high_volt = 3.8
