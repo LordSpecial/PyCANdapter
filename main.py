@@ -17,7 +17,6 @@ def send_motec_keepalive(candapter, frame0x100):
     candapter.send_can_message(frame0x100)
 
 
-
 def send_packstate_2(candapter: CANDapter, frame0x6B1: CANFrame):
     frame0x6B1.data[6] = not frame0x6B1.data[7]  # change rolling counter
     crc(frame0x6B1)
@@ -55,12 +54,31 @@ def gui_event_loop():
             break
     window.close()
 
+
 def call_every(interval, func, *args):
     while True:
         start_time = time.time()
         func(*args)
         elapsed = time.time() - start_time
         time.sleep(max(0, interval - elapsed))
+
+
+def do_fucking_everything(candapter, frame0x100, frame0x6B1, frame0x6B3, frame0x6B4):
+    counter = 0;
+    while True:
+        start_time = time.time()
+        counter = counter + 1
+
+        if counter % (48 / 8) == 0:
+            send_motec_keepalive(candapter, frame0x100)
+        if counter % (56 / 8) == 0:
+            send_cell_votages_temperatures(candapter, frame0x6B3, frame0x6B4)
+        if counter % (152 / 8) == 0:
+            send_packstate_2(candapter, frame0x6B1)
+
+        elapsed = time.time() - start_time
+        time.sleep(max(0, 0.008 - elapsed))
+
 
 def main():
     global enable_bms
@@ -93,9 +111,10 @@ def main():
     pack_float(avg_temp, 1000, frame0x6B4, 2)
     pack_float(low_temp, 1000, frame0x6B4, 4)
 
-    threading.Thread(target=call_every, args=(0.048, send_motec_keepalive, candapter, frame0x100)).start()
-    threading.Thread(target=call_every, args=(0.152, send_packstate_2, candapter, frame0x6B1)).start()
-    #threading.Thread(target=call_every, args=(0.056, send_cell_votages_temperatures, candapter, frame0x6B3, frame0x6B4)).start()
+    # threading.Thread(target=call_every, args=(0.048, send_motec_keepalive, candapter, frame0x100)).start()
+    # threading.Thread(target=call_every, args=(0.152, send_packstate_2, candapter, frame0x6B1)).start()
+    # threading.Thread(target=call_every, args=(0.056, send_cell_votages_temperatures, candapter, frame0x6B3, frame0x6B4)).start()
+    threading.Thread(target=do_fucking_everything, args=(candapter, frame0x100, frame0x6B1, frame0x6B3, frame0x6B4)).start()
 
     # instantiate the GUI event loop thread
     # threading.Thread(target=gui_event_loop, args=()).start()
@@ -106,7 +125,7 @@ def main():
             "Enter a character (m (toggle keepalive), b (toggle bms active), h (high cell voltage fault), t): ")
         if user_input == 'm':  # motec keepalive
             print("Keepalive toggles")
-            frame0x100.data[7] = not frame0x100.data[7]
+            frame0x100.data[0] = not frame0x100.data[0]
             motec_keepalive = not motec_keepalive
 
             print(datetime.utcnow().strftime('%H:%M:%S.%f'), str(frame0x100))
