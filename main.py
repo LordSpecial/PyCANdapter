@@ -10,7 +10,15 @@ enable_bms = True
 
 
 def crc(message):
-    message.data[7] = sum(message.data[:-1]) % 256
+    # Checksum Calculation:
+    # Take the broadcast ID and add 8(the length).
+    # Add bytes 0 - 6 to the value from step 1.
+    # Chop off the least significant 8 bits(effectively turning it into an unsigned byte) and that will be the checksum value.
+    # If the computed checksum does not equal the provided checksum, the values should be discarded.
+    checksum = int(message.frame_id, 16) + len(message.data)
+    checksum += sum(int(item) for item in message.data[:-1])
+    checksum &= 0xFF
+    return checksum
 
 
 def send_motec_keepalive(candapter, frame0x100):
@@ -18,16 +26,16 @@ def send_motec_keepalive(candapter, frame0x100):
 
 
 def send_packstate_2(candapter: CANDapter, frame0x6B1: CANFrame):
-    frame0x6B1.data[6] = not frame0x6B1.data[7]  # change rolling counter
-    crc(frame0x6B1)
+    frame0x6B1.data[6] = (frame0x6B1.data[6]+1) % 256  # change rolling counter
+    frame0x6B1.data[7] = crc(frame0x6B1)
     if enable_bms:
         candapter.send_can_message(frame0x6B1)
 
 
 def send_cell_votages_temperatures(candapter, frame0x6B3, frame0x6B4):
     if enable_bms:
-        crc(frame0x6B3)
-        crc(frame0x6B4)
+        frame0x6B3.data[7] = crc(frame0x6B3)
+        frame0x6B4.data[7] = crc(frame0x6B4)
 
         candapter.send_can_message(frame0x6B3)
         candapter.send_can_message(frame0x6B4)
@@ -89,9 +97,9 @@ def main():
     high_volt = 3.8
     avg_volt = 3.6
     low_volt = 3.5
-    num_cells = 30
+    num_cells = 120
 
-    high_temp = 30.1
+    high_temp = 30
     avg_temp = 25.3
     low_temp = 20.2
 
@@ -135,7 +143,7 @@ def main():
             enable_bms = not enable_bms
         elif user_input == 'h':  # High cell voltage
             print("High Cell Fault toggles")
-            if high_volt < 4:
+            if high_volt != 5:
                 high_volt = 5
             else:
                 high_volt = 3.8
@@ -160,12 +168,12 @@ def main():
         elif user_input == 't':  # High temp
             print("High Cell Fault toggles")
             if high_temp == 30:
-                high_temp = 51
-            elif high_temp == 51:
+                high_temp = 55
+            elif high_temp == 55:
                 high_temp = 65
             else:
                 high_temp = 30
-            pack_float(high_temp, 1000, frame0x6B4, 0)
+            pack_float(high_temp, 1, frame0x6B4, 0)
             print(datetime.utcnow().strftime('%H:%M:%S.%f'), str(frame0x6B4))
         else:
             print("Invalid input. Please enter m, b, v, or t.")
