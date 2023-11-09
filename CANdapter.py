@@ -28,7 +28,8 @@ class CANFrame:
         data = b''
         for item in self.data:
             data += bytes(str(hex(item)).replace("0x",""), "ASCII")
-
+        if len(data) == 1:
+            data = b'0' + data
         return bytes(identifier, 'ascii') + bytes(length, 'ascii') + data
 
 

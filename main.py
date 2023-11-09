@@ -77,7 +77,7 @@ def do_fucking_everything(candapter, frame0x100, frame0x6B1, frame0x6B3, frame0x
             send_packstate_2(candapter, frame0x6B1)
 
         elapsed = time.time() - start_time
-        time.sleep(max(0, 0.008 - elapsed))
+        time.sleep(max(0, 0.007 - elapsed)) # 7 not 8 cause it takes a ms to run? idk but it's accurate
 
 
 def main():
@@ -126,6 +126,7 @@ def main():
         if user_input == 'm':  # motec keepalive
             print("Keepalive toggles")
             frame0x100.data[0] = not frame0x100.data[0]
+            #pack_float(not frame0x100.data[0], 0, frame0x100, 0)
             motec_keepalive = not motec_keepalive
 
             print(datetime.utcnow().strftime('%H:%M:%S.%f'), str(frame0x100))
