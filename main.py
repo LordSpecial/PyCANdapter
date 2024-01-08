@@ -3,7 +3,7 @@ from fakeCANdapter import fakeCANdapter
 import sched
 import time
 import threading
-import PySimpleGUI as psg
+# import PySimpleGUI as psg
 from datetime import datetime
 
 enable_bms = True
@@ -26,7 +26,7 @@ def send_motec_keepalive(candapter, frame0x100):
 
 
 def send_packstate_2(candapter: CANDapter, frame0x6B1: CANFrame):
-    frame0x6B1.data[6] = (frame0x6B1.data[6]+1) % 256  # change rolling counter
+    frame0x6B1.data[6] = (frame0x6B1.data[6] + 1) % 256  # change rolling counter
     frame0x6B1.data[7] = crc(frame0x6B1)
     if enable_bms:
         candapter.send_can_message(frame0x6B1)
@@ -44,23 +44,23 @@ def send_cell_votages_temperatures(candapter, frame0x6B3, frame0x6B4):
 def pack_float(val, multiplier, message, pos):
     val = val * multiplier
     message.data[pos] = int(val / 256)
-    message.data[pos+1] = int(val) % 256
+    message.data[pos + 1] = int(val) % 256
 
 
-def gui_event_loop():
-    layout = [[psg.Text(text='BMS Emulator',
-                        font=('Arial Bold', 20),
-                        size=20,
-                        expand_x=True,
-                        justification='center')],
-              ]
-    window = psg.Window('BMS Emulator', layout, size=(715, 250))
-    while True:
-        event, values = window.read()
-        print(event, values)
-        if event in (None, 'Exit'):
-            break
-    window.close()
+# def gui_event_loop():
+#     layout = [[psg.Text(text='BMS Emulator',
+#                         font=('Arial Bold', 20),
+#                         size=20,
+#                         expand_x=True,
+#                         justification='center')],
+#               ]
+#     window = psg.Window('BMS Emulator', layout, size=(715, 250))
+#     while True:
+#         event, values = window.read()
+#         print(event, values)
+#         if event in (None, 'Exit'):
+#             break
+#     window.close()
 
 
 def call_every(interval, func, *args):
@@ -85,13 +85,13 @@ def do_fucking_everything(candapter, frame0x100, frame0x6B1, frame0x6B3, frame0x
             send_packstate_2(candapter, frame0x6B1)
 
         elapsed = time.time() - start_time
-        time.sleep(max(0, 0.007 - elapsed)) # 7 not 8 cause it takes a ms to run? idk but it's accurate
+        time.sleep(max(0, 0.007 - elapsed))  # 7 not 8 cause it takes a ms to run? idk but it's accurate
 
 
 def main():
     global enable_bms
-    candapter = CANDapter("COM5", 250)
-    #candapter = fakeCANdapter()
+    candapter = CANDapter("COM6", 250)
+    # candapter = fakeCANdapter()
 
     motec_keepalive = 0
     high_volt = 3.8
@@ -113,16 +113,17 @@ def main():
     pack_float(avg_volt, 10000, frame0x6B3, 2)
     pack_float(low_volt, 10000, frame0x6B3, 4)
 
-    frame0x6B4 = CANFrame("6B4", 8, [0x00, 0x00, 0x00, 0x13, 0x00, 0x05, 0x00, 0x00])
+    frame0x6B4 = CANFrame("6B4", 8, [0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00])
 
-    pack_float(high_temp, 1000, frame0x6B4, 0)
-    pack_float(avg_temp, 1000, frame0x6B4, 2)
-    pack_float(low_temp, 1000, frame0x6B4, 4)
+    pack_float(high_temp, 1, frame0x6B4, 0)
+    pack_float(avg_temp, 1, frame0x6B4, 2)
+    pack_float(low_temp, 1, frame0x6B4, 4)
 
     # threading.Thread(target=call_every, args=(0.048, send_motec_keepalive, candapter, frame0x100)).start()
     # threading.Thread(target=call_every, args=(0.152, send_packstate_2, candapter, frame0x6B1)).start()
     # threading.Thread(target=call_every, args=(0.056, send_cell_votages_temperatures, candapter, frame0x6B3, frame0x6B4)).start()
-    threading.Thread(target=do_fucking_everything, args=(candapter, frame0x100, frame0x6B1, frame0x6B3, frame0x6B4)).start()
+    threading.Thread(target=do_fucking_everything,
+                     args=(candapter, frame0x100, frame0x6B1, frame0x6B3, frame0x6B4)).start()
 
     # instantiate the GUI event loop thread
     # threading.Thread(target=gui_event_loop, args=()).start()
@@ -134,7 +135,7 @@ def main():
         if user_input == 'm':  # motec keepalive
             print("Keepalive toggles")
             frame0x100.data[0] = not frame0x100.data[0]
-            #pack_float(not frame0x100.data[0], 0, frame0x100, 0)
+            # pack_float(not frame0x100.data[0], 0, frame0x100, 0)
             motec_keepalive = not motec_keepalive
 
             print(datetime.utcnow().strftime('%H:%M:%S.%f'), str(frame0x100))
